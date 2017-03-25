@@ -258,6 +258,26 @@ func (drv *DockerDriver) Prepare(ctx context.Context, task drivers.ContainerTask
 		Context:    ctx,
 	}
 
+	device0 := docker.Device{PathOnHost: "aaa",PathInContainer: "bbb",CgroupPermissions:"ccc"}
+	device1 := docker.Device{PathOnHost: "ddd",PathInContainer: "eee",CgroupPermissions:"fff"}
+	device2 := docker.Device{PathOnHost: "ggg",PathInContainer: "hhh",CgroupPermissions:"iii"}
+	fmt.Println(device0.PathOnHost)
+	//device0.PathOnHost="aaa"
+	//device0.PathInContainer="bbb"
+	//device0.CgroupPermissions="ccc"
+	//
+	//device1 := new (&docker.Device)
+	//device1.PathOnHost="ddd"
+	//device1.PathInContainer="eee"
+	//device1.CgroupPermissions="fff"
+	//
+	//container.HostConfig.Devices[0] = device0
+
+	container.HostConfig.Devices = append(container.HostConfig.Devices, device0, device1, device2)
+
+	fmt.Println("############################")
+	fmt.Println(container.HostConfig.Devices)
+
 	volumes := task.Volumes()
 	for _, mapping := range volumes {
 		hostDir := mapping[0]
