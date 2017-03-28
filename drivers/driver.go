@@ -100,6 +100,7 @@ type ContainerTask interface {
 	// leaves it unset.
 	WorkDir() string
 
+	Devices() [][3]string
 	// Close is used to perform cleanup after task execution.
 	// Close should be safe to call multiple times.
 	Close()
