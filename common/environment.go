@@ -15,7 +15,7 @@
 package common
 
 import (
-	"github.com/iron-io/runner/common/stats"
+	"github.com/iron-io/cmdhema/common/stats"
 )
 
 // An Environment is a long lived object that carries around 'configuration'
