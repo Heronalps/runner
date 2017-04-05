@@ -15,6 +15,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -640,3 +641,25 @@ func (drv *DockerDriver) status(ctx context.Context, container string) (status s
 		return drivers.StatusKilled, drivers.ErrOutOfMemory
 	}
 }
+
+func (drv *DockerDriver) Build(imageName string) (error) {
+	var buf bytes.Buffer
+	buildOptions := docker.BuildImageOptions{
+		OutputStream:   &buf,
+		RawJSONStream:  true,
+		ContextDir:	"/home/taejoon/kjwook/iron/function/",
+		Dockerfile:	"Dockerfile",
+		Name:		imageName,
+	}
+	fmt.Println("Build Image on gpu server!!")
+	return drv.docker.BuildImage(buildOptions)
+}
+
+//func (drv *DockerDriver) Build(ctx context.Context) (error) {
+//
+//	buildOptions := docker.BuildImageOptions{
+//
+//	}
+//
+//	return drv.docker.BuildImage(buildOptions)
+//}

@@ -53,6 +53,8 @@ type dockerClient interface {
 	InspectContainer(id string) (*docker.Container, error)
 	StopContainer(id string, timeout uint) error
 	Stats(opts docker.StatsOptions) error
+
+	BuildImage(opts docker.BuildImageOptions) error
 }
 
 // TODO: switch to github.com/docker/engine-api
@@ -312,4 +314,9 @@ func (d *dockerWrap) Stats(opts docker.StatsOptions) (err error) {
 	//return err
 	//})
 	//return err
+}
+
+func (d *dockerWrap) BuildImage(opts docker.BuildImageOptions) (err error) {
+	fmt.Println("Build Image~~~~~~~~~~~~~")
+	return d.docker.BuildImage(opts)
 }
