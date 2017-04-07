@@ -55,6 +55,9 @@ type dockerClient interface {
 	Stats(opts docker.StatsOptions) error
 
 	BuildImage(opts docker.BuildImageOptions) error
+	UploadToContainer(id string, opts docker.UploadToContainerOptions) error
+	CreateExec (opts docker.CreateExecOptions) (*docker.Exec, error)
+	StartExec (id string, opts docker.StartExecOptions) (error)
 }
 
 // TODO: switch to github.com/docker/engine-api
@@ -319,4 +322,16 @@ func (d *dockerWrap) Stats(opts docker.StatsOptions) (err error) {
 func (d *dockerWrap) BuildImage(opts docker.BuildImageOptions) (err error) {
 	fmt.Println("Build Image~~~~~~~~~~~~~")
 	return d.docker.BuildImage(opts)
+}
+
+func (d *dockerWrap) UploadToContainer(id string, opts docker.UploadToContainerOptions) (err error) {
+	return d.docker.UploadToContainer(id, opts)
+}
+
+func (d *dockerWrap) CreateExec (opts docker.CreateExecOptions) ( exec *docker.Exec, err error) {
+	return d.docker.CreateExec(opts)
+}
+
+func (d *dockerWrap) StartExec (id string, opts docker.StartExecOptions) (error) {
+	return d.docker.StartExec(id, opts)
 }

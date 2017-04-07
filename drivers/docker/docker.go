@@ -28,6 +28,8 @@ import (
 	"path"
 	"strings"
 	"time"
+	"log"
+	"archive/tar"
 
 	"github.com/Sirupsen/logrus"
 	manifest "github.com/docker/distribution/manifest/schema1"
@@ -655,6 +657,77 @@ func (drv *DockerDriver) Build(imageName string) (error) {
 	return drv.docker.BuildImage(buildOptions)
 }
 
+func (drv *DockerDriver) Upload(funcCode string) (error) {
+	containerId := "1681eaf7dee9"
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	var files = []struct {
+		Name, Body string
+	}{
+		{"func.py", funcCode},
+	}
+
+	for _, file := range files {
+		hdr := &tar.Header{
+			Name: file.Name,
+			Mode: 0600,
+			Size: int64(len(file.Body)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			log.Fatalln(err)
+		}
+		if _, err := tw.Write([]byte(file.Body)); err != nil {
+			log.Fatalln(err)
+		}
+	}
+
+	if err := tw.Close(); err != nil {
+		log.Fatalln(err)
+	}
+
+	uploadOptions := docker.UploadToContainerOptions {
+		InputStream: buf,
+		Path: "/function/",
+		NoOverwriteDirNonDir: true,
+	}
+
+	return drv.docker.UploadToContainer(containerId, uploadOptions)
+}
+
+func (drv *DockerDriver) Exec() (error) {
+	createExecOption := docker.CreateExecOptions {
+		Container: "1681eaf7dee9",
+		AttachStdin: true,
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd: []string{"/bin/sh", "-c", "python /function/func.py"},
+
+		Tty: false,
+	}
+
+	exec, err := drv.docker.CreateExec(createExecOption)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("created exec id : " + exec.ID)
+
+	var stdout, stderr bytes.Buffer
+	var reader = strings.NewReader("echo hello world")
+
+	startExecOption := docker.StartExecOptions {
+		OutputStream: &stdout,
+		ErrorStream:  &stderr,
+		InputStream:  reader,
+		RawTerminal:  true,
+	}
+
+	drv.docker.StartExec(exec.ID, startExecOption)
+	fmt.Println(stdout.String())
+	return nil
+}
 //func (drv *DockerDriver) Build(ctx context.Context) (error) {
 //
 //	buildOptions := docker.BuildImageOptions{
