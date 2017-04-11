@@ -78,6 +78,7 @@ type Auther interface {
 type runResult struct {
 	error
 	StatusValue string
+	FuncResultBody string
 }
 
 func (r *runResult) Error() string {
@@ -89,6 +90,7 @@ func (r *runResult) Error() string {
 
 func (r *runResult) Status() string    { return r.StatusValue }
 func (r *runResult) UserVisible() bool { return common.IsUserVisibleError(r.error) }
+func (r *runResult) FuncResult() string	{ return r.FuncResultBody }
 
 type DockerDriver struct {
 	conf     drivers.Config
@@ -657,8 +659,8 @@ func (drv *DockerDriver) Build(imageName string) (error) {
 	return drv.docker.BuildImage(buildOptions)
 }
 
-func (drv *DockerDriver) Upload(funcCode string) (error) {
-	containerId := "1681eaf7dee9"
+func (drv *DockerDriver) Upload(fileName string, funcCode string) (error) {
+	containerId := getMasterVolumeContainerId()
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -666,7 +668,7 @@ func (drv *DockerDriver) Upload(funcCode string) (error) {
 	var files = []struct {
 		Name, Body string
 	}{
-		{"func.py", funcCode},
+		{fileName, funcCode},
 	}
 
 	for _, file := range files {
@@ -689,27 +691,33 @@ func (drv *DockerDriver) Upload(funcCode string) (error) {
 
 	uploadOptions := docker.UploadToContainerOptions {
 		InputStream: buf,
-		Path: "/function/",
+		Path: "/data/functions/",
 		NoOverwriteDirNonDir: true,
 	}
 
 	return drv.docker.UploadToContainer(containerId, uploadOptions)
 }
 
-func (drv *DockerDriver) Exec() (error) {
+func (drv *DockerDriver) Exec(fileName string) ( drivers.RunResult, error) {
+
+	var baseFuncPath string = "python /data/functions/"
+	fileName =  fmt.Sprintf("%s%s", baseFuncPath, fileName)
+
+	var containerId = getBestContainerId()
+
 	createExecOption := docker.CreateExecOptions {
-		Container: "1681eaf7dee9",
+		Container: containerId,
 		AttachStdin: true,
 		AttachStdout: true,
 		AttachStderr: true,
-		Cmd: []string{"/bin/sh", "-c", "python /function/func.py"},
+		Cmd: []string{"/bin/sh", "-c", fileName},
 
 		Tty: false,
 	}
 
 	exec, err := drv.docker.CreateExec(createExecOption)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("created exec id : " + exec.ID)
@@ -724,15 +732,23 @@ func (drv *DockerDriver) Exec() (error) {
 		RawTerminal:  true,
 	}
 
-	drv.docker.StartExec(exec.ID, startExecOption)
-	fmt.Println(stdout.String())
-	return nil
+	err = drv.docker.StartExec(exec.ID, startExecOption)
+	//fmt.Println(stdout.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return &runResult{
+		FuncResultBody: stdout.String(),
+		StatusValue: "gpu",
+		error:       err,
+	}, nil
 }
-//func (drv *DockerDriver) Build(ctx context.Context) (error) {
-//
-//	buildOptions := docker.BuildImageOptions{
-//
-//	}
-//
-//	return drv.docker.BuildImage(buildOptions)
-//}
+
+func getMasterVolumeContainerId() (string){
+	return "1a42de021441"
+}
+
+func getBestContainerId() (string) {
+	return "6a33d7d9c520"
+}

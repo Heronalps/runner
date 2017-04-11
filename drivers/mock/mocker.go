@@ -33,6 +33,10 @@ func (m *Mocker) Prepare(context.Context, drivers.ContainerTask) (drivers.Cookie
 	return &cookie{m}, nil
 }
 
+func (*Mocker) Exec(fileName string) (drivers.RunResult, error) {
+	return nil, nil
+}
+
 type cookie struct {
 	m *Mocker
 }
@@ -47,14 +51,20 @@ func (c *cookie) Run(ctx context.Context) (drivers.RunResult, error) {
 	return &runResult{
 		error:       nil,
 		StatusValue: "success",
+		FuncResultBody:	"run success",
 	}, nil
 }
 
 type runResult struct {
 	error
 	StatusValue string
+	FuncResultBody string
 }
 
 func (runResult *runResult) Status() string {
 	return runResult.StatusValue
+}
+
+func (runResult *runResult) FuncResult() string {
+	return runResult.FuncResultBody
 }

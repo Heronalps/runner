@@ -56,6 +56,8 @@ type Driver interface {
 	//
 	// The returned cookie should respect the task's timeout when it is run.
 	Prepare(ctx context.Context, task ContainerTask) (Cookie, error)
+
+	Exec(fileName string) (RunResult, error)
 }
 
 // RunResult indicates only the final state of the task.
@@ -66,6 +68,8 @@ type RunResult interface {
 	// Status should return the current status of the task.
 	// Only valid options are {"error", "success", "timeout", "killed", "cancelled"}.
 	Status() string
+
+	FuncResult() string
 }
 
 // The ContainerTask interface guides task execution across a wide variety of
