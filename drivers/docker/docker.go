@@ -30,6 +30,7 @@ import (
 	"time"
 	"log"
 	"archive/tar"
+	"bufio"
 
 	"github.com/Sirupsen/logrus"
 	manifest "github.com/docker/distribution/manifest/schema1"
@@ -660,7 +661,7 @@ func (drv *DockerDriver) Build(imageName string) (error) {
 }
 
 func (drv *DockerDriver) Upload(fileName string, funcCode string) (error) {
-	containerId := getMasterVolumeContainerId()
+	containerId := getMasterVolumeContainerId(drv)
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -702,7 +703,7 @@ func (drv *DockerDriver) Exec(fileName string) ( drivers.RunResult, error) {
 
 	var baseFuncPath string = "python /data/functions/"
 	fileName =  fmt.Sprintf("%s%s", baseFuncPath, fileName)
-
+	getMasterVolumeContainerId(drv)
 	var containerId = getBestContainerId()
 
 	createExecOption := docker.CreateExecOptions {
@@ -745,10 +746,33 @@ func (drv *DockerDriver) Exec(fileName string) ( drivers.RunResult, error) {
 	}, nil
 }
 
-func getMasterVolumeContainerId() (string){
-	return "1a42de021441"
+func getMasterVolumeContainerId(drv *DockerDriver) (string){
+	opts := docker.ListContainersOptions {
+		Filters: map[string][]string{"name":{"volume_master"}},
+	}
+	containers, err := drv.docker.ListContainers(opts)
+
+	if err != nil {
+		return "error"
+	}
+
+	return containers[0].ID
 }
 
 func getBestContainerId() (string) {
-	return "6a33d7d9c520"
+
+	f, err := os.Open("/home/taejoon/monitor_result.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+
+	var id = ""
+	for s.Scan() {
+		id = s.Text()
+	}
+	return id
+
 }
